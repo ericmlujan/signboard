@@ -6,10 +6,10 @@ cc_library(
         "src/transit_client.cpp",
     ],
     hdrs = [
-        "include/types.h",
         "include/deadpool.h",
         "include/rapidxml.hpp",
         "include/transit_client.h",
+        "include/types.h",
         "include/util.h",
     ],
     strip_include_prefix="include",
