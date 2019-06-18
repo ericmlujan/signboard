@@ -1,0 +1,5 @@
+build --cxxopt='-std=c++17'
+test --cxxopt='-std=c++17'
+
+# build --compiler='clang'
+# test --compiler='clang'

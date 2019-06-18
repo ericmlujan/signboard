@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?> 
+<body copyright="All data copyright San Francisco Muni 2018.">
+<predictions agencyTitle="San Francisco Muni" routeTitle="10-Townsend" routeTag="10" stopTitle="Pacific Ave &amp; Taylor St" stopTag="5857">
+  <direction title="Outbound to Potrero + 24th Street">
+  <prediction epochTime="1536899093037" seconds="251" minutes="4" isDeparture="false" affectedByLayover="true" dirTag="10___O_F00" vehicle="8774" block="1005" tripTag="8332226" />
+  <prediction epochTime="1536900544037" seconds="1702" minutes="28" isDeparture="false" affectedByLayover="true" dirTag="10___O_F00" vehicle="8304" block="1010" tripTag="8332225" />
+  <prediction epochTime="1536902404037" seconds="3562" minutes="59" isDeparture="false" affectedByLayover="true" dirTag="10___O_F00" vehicle="8195" block="1006" tripTag="8332224" />
+  <prediction epochTime="1536904204037" seconds="5362" minutes="89" isDeparture="false" affectedByLayover="true" dirTag="10___O_F00" vehicle="8342" block="1001" tripTag="8332223" />
+  </direction>
+<message text="See something, Say something. Report unusual activity or objects." priority="Low"/>
+</predictions>
+<predictions agencyTitle="San Francisco Muni" routeTitle="12-Folsom-Pacific" routeTag="12" stopTitle="Pacific Ave &amp; Taylor St" stopTag="5857">
+  <direction title="Outbound to Mission District">
+  <prediction epochTime="1536899661437" seconds="819" minutes="13" isDeparture="false" affectedByLayover="true" dirTag="12___O_F00" vehicle="8707" block="1205" tripTag="8332549" />
+  <prediction epochTime="1536901461437" seconds="2619" minutes="43" isDeparture="false" affectedByLayover="true" dirTag="12___O_F00" vehicle="8778" block="1202" tripTag="8332548" />
+  <prediction epochTime="1536903261437" seconds="4419" minutes="73" isDeparture="false" affectedByLayover="true" dirTag="12___O_F00" vehicle="8718" block="1207" tripTag="8332547" />
+  </direction>
+<message text="See something, Say something. Report unusual activity or objects." priority="Low"/>
+</predictions>
+</body>

@@ -1,0 +1,6 @@
+.DS_Store
+bazel-*
+TAGS
+*.log
+\#*\#
+.\#*
