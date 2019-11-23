@@ -1,8 +1,10 @@
 #pragma once
+
 #include <cstdlib>
+#include <map>
 #include <string>
 
-#include "absl/container/flat_hash_set.h"
+#include "absl/hash/hash.h"
 
 namespace signboard {
 using Prediction = uint32_t;
@@ -23,7 +25,7 @@ struct Route {
 struct Stop {
   std::string stopId;
   std::string stopTitle;
-  absl::flat_hash_map<std::string, Route> routes; // routeTag => Route
+  std::map<std::string, Route> routes; // routeTag => Route
 
   Stop(const std::string &id, const std::string &title)
       : stopId(id), stopTitle(title) {}
@@ -34,7 +36,7 @@ struct Stop {
 };
 
 struct Predictions {
-  absl::flat_hash_map<std::string, Stop> stops; // stopId => Stop
+  std::map<std::string, Stop> stops; // stopId => Stop
 
   void clear() {
     for (auto &[stopId, stop] : stops) {

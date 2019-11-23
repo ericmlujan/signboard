@@ -15,13 +15,13 @@ std::string TruncateDirection(const std::string &direction) {
 
 // Return the cached set of predictions and kick off a refresh if it's time to
 // refresh
-Predictions TransitClient::getPredictions() {
+const Predictions& TransitClient::getPredictions() {
   auto now = Clock::now();
 
   // Trigger a refresh if it's that kind of time
-  if (now - _lastRefreshTime > _refreshDuration) {
+  if (_deadpool && (now - _lastRefreshTime > _refreshDuration)) {
     _lastRefreshTime = Clock::now();
-    _deadpool.push(&TransitClient::refreshPredictions, this);
+    _deadpool->push(&TransitClient::refreshPredictions, this);
   }
 
   return _predictions;
@@ -39,7 +39,7 @@ void TransitClient::refreshPredictions() {
   url += "&useShortTitles=true";
 
   std::string body;
-  size_t res = getHTTP(url, &body);
+  size_t res = GetHTTP(url, &body);
 
   // Error in processing, that's not good
   if (res != 200) {
@@ -98,39 +98,4 @@ void TransitClient::parseNextMuniResponse(std::string xmlString,
     }
   }
 }
-
-size_t TransitClient::getHTTP(const std::string &url, std::string *out) const {
-  auto handle = curl_easy_init();
-  MemoryBuffer buf;
-  size_t httpResponse = 0;
-
-  curl_easy_setopt(handle, CURLOPT_URL, url.c_str());
-  curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, handleHTTPResponse);
-  curl_easy_setopt(handle, CURLOPT_WRITEDATA, (void *)&buf);
-
-  // Perform the HTTP request
-  CURLcode result = curl_easy_perform(handle);
-  if (result != CURLE_OK) {
-    fprintf(stderr, "error in performing HTTP request: %s\n",
-            curl_easy_strerror(result));
-  } else {
-    *out = buf.toString();
-    curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &httpResponse);
-  }
-  curl_easy_cleanup(handle);
-  return httpResponse;
-}
-
-size_t TransitClient::handleHTTPResponse(char *bytes, size_t size, size_t nmemb,
-                                         void *out) {
-  MemoryBuffer *buf = (MemoryBuffer *)out;
-  size_t adjustedSize = size * nmemb;
-  if (!buf) {
-    return 0;
-  }
-
-  buf->append(bytes, adjustedSize);
-  return adjustedSize;
-}
-
 } // namespace signboard
