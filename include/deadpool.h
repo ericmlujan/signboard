@@ -16,7 +16,7 @@ public:
   Deadpool(size_t numJobs);
   ~Deadpool();
 
-  template <typename F, typename... Args> void push(F &&f, Args &&... args) {
+  template <typename F, typename... Args> inline void push(F &&f, Args &&... args) {
     {
       std::lock_guard<std::mutex> guard(_mutex);
       _jobs.emplace_back(std::bind(f, args...));
