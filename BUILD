@@ -1,48 +1,116 @@
 cc_library(
     name = "transit",
-    copts = ["-O3", "-g", "-Wall", "-Wextra"],
     srcs = [
-        "src/deadpool.cpp",
         "src/transit_client.cpp",
     ],
     hdrs = [
-        "include/deadpool.h",
-        "include/rapidxml.hpp",
         "include/transit_client.h",
         "include/types.h",
-        "include/util.h",
     ],
     strip_include_prefix="include",
     deps = [
-        "@abseil//absl/container:flat_hash_map",
-        "@abseil//absl/container:flat_hash_set",
-        "@abseil//absl/hash",
-        "@curl//:curl",
+        ":util",
     ]
 )
 
 cc_library(
-    name = "libsignboard",
-    copts = ["-O3", "-g", "-Wall", "-Wextra"],
+    name = "transit_plugin",
     srcs = [
-        "src/graphics_util.cpp",
-        "src/pager.cpp",
+        "src/transit_plugin.cpp"
     ],
     hdrs = [
-        "include/graphics_util.h",
-        "include/pager.h",
-        "include/signboard_plugin.h",
+        "include/transit_plugin.h"
     ],
     strip_include_prefix="include",
     deps = [
         ":transit",
+        ":libsignboard"
+    ]
+)
+
+cc_library(
+    name = "weather_plugin",
+    srcs = [
+         "src/weather_plugin.cpp"
+    ],
+    hdrs = [
+         "include/weather_plugin.h",
+    ],
+    strip_include_prefix="include",
+    deps = [
+         "@json//:json",
+         ":libsignboard",
+         ":util",
+    ]
+)
+
+cc_library(
+    name = "news_plugin",
+    srcs = [
+         "src/news_plugin.cpp"
+    ],
+    hdrs = [
+         "include/news_plugin.h",
+    ],
+    strip_include_prefix="include",
+    deps = [
+         "@json//:json",
+         ":libsignboard",
+         ":util",
+    ]
+)
+
+cc_library(
+    name = "mux_plugin",
+    srcs = [
+        "src/mux_plugin.cpp",
+    ],
+    hdrs = [
+        "include/mux_plugin.h",
+    ],
+    strip_include_prefix= "include",
+    deps = [
+        ":libsignboard"
+    ]
+)
+
+cc_library(
+    name = "util",
+    srcs = [
+        "src/deadpool.cpp",
+    ],
+    hdrs = [
+        "include/deadpool.h",
+        "include/rapidxml.hpp",
+        "include/util.h",
+    ],
+    strip_include_prefix="include",
+    deps = [
+        "@abseil//absl/hash:hash",
+        "@curl//:curl",
+    ],
+)
+
+cc_library(
+    name = "libsignboard",
+    srcs = [
+        "src/animation.cpp",
+        "src/graphics_util.cpp",
+    ],
+    hdrs = [
+        "include/animation.h",
+        "include/graphics_util.h",
+        "include/signboard_plugin.h",
+    ],
+    strip_include_prefix="include",
+    deps = [
         "@librgbmatrix//:librgbmatrix",
+        ":util",
     ],
 )
 
 cc_test(
     name = "test_transit",
-    copts = ["-O0", "-g", "-Wall", "-Wextra"],
     srcs = [
         "test/test_transit_client.cpp",
         "test/test_util.cpp",
@@ -53,8 +121,25 @@ cc_test(
     ]
 )
 
+cc_test(
+    name = "test_weather",
+    srcs = [
+         "test/test_weather.cpp",
+    ],
+    deps = [
+        ":weather_plugin",
+        "@gtest//:gtest",
+    ]
+)
+
 cc_binary(
     name = "signboard",
     srcs = ["src/signboard.cpp"],
-    deps = [":libsignboard"]
+    deps = [
+        ":libsignboard",
+        ":mux_plugin",
+        ":news_plugin",
+        ":transit_plugin",
+        ":weather_plugin",
+    ]
 )

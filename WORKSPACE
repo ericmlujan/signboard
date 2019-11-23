@@ -29,6 +29,14 @@ http_archive(
     sha256 = "68f4935be244a098adf3ca4ee1a06ce1cf5d14cda3e79bd1ca3a526628f1d978"
 )
 
+http_archive(
+    name = "json",
+    urls = ["https://github.com/nlohmann/json/archive/v3.7.0.zip"],
+    strip_prefix = "json-3.7.0",
+    sha256 = "37b25617dccb359366d8ac75912d9a25e20fe15d0ed942819e23d02003d39f87",
+    build_file="//external:json.BUILD"
+)
+
 new_local_repository(
   name = "curl",
   path = "",
