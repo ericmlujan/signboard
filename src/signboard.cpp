@@ -1,7 +1,3 @@
-#include "graphics_util.h"
-#include "pager.h"
-#include "transit_client.h"
-
 #include <chrono>
 #include <iostream>
 #include <signal.h>
@@ -10,21 +6,17 @@
 #include <thread>
 #include <unistd.h>
 
+#include "animation.h"
+#include "mux_plugin.h"
+#include "news_plugin.h"
+#include "transit_plugin.h"
+#include "weather_plugin.h"
+
 volatile bool interrupted = false;
 
 static void handleSignal(int sig) {
   std::printf("Caught signal %d; exiting.", sig);
   interrupted = true;
-}
-
-void getCurrentTime(std::string *out) {
-  char buf[64];
-
-  auto now = std::chrono::system_clock::now();
-  std::time_t n = std::chrono::system_clock::to_time_t(now);
-  std::strftime(buf, sizeof(buf), "%H:%M", std::localtime(&n));
-
-  *out = buf;
 }
 
 int main(int argc, char **argv) {
@@ -33,7 +25,7 @@ int main(int argc, char **argv) {
 
   // Init GPIO
   // Configure LED matrix
-  // TODO: actually do this from a config file or some shit
+  // TODO: actually do this from a config file
   rgb_matrix::RuntimeOptions runtimeOptions;
   runtimeOptions.gpio_slowdown = 2;
   rgb_matrix::RGBMatrix::Options matrixOptions;
@@ -42,20 +34,11 @@ int main(int argc, char **argv) {
   matrixOptions.cols = 64;
   matrixOptions.chain_length = 2;
   matrixOptions.pixel_mapper_config = "Rotate:180";
-  float refreshRate = 7.0f; // Hz
-  size_t usleepDuration = 1e6f / refreshRate;
-  size_t brightness = 100;
-  auto pageDuration = std::chrono::seconds(5);
-
-  signboard::Pager::PagerSettings settings;
-  settings.pageDuration = pageDuration;
-
-  const rgb_matrix::Color red(255, 0, 0);
-  const rgb_matrix::Color yellow(255, 174, 0);
-  const rgb_matrix::Color white(255, 255, 255);
-  const rgb_matrix::Color green(126, 255, 84);
-
-  const char *fontPath = "fonts/5x8.bdf";
+  constexpr float refreshRate = 30.0f; // Hz
+  constexpr size_t usleepDuration = 1e6f / refreshRate;
+  constexpr size_t brightness = 100;
+  constexpr size_t workerThreads = 5;
+  constexpr char *fontPath = "fonts/5x8.bdf";
 
   // Try loading the font
   rgb_matrix::Font font;
@@ -66,43 +49,30 @@ int main(int argc, char **argv) {
 
   auto matrix = std::unique_ptr<rgb_matrix::RGBMatrix>(
       rgb_matrix::CreateMatrixFromOptions(matrixOptions, runtimeOptions));
-  rgb_matrix::FrameCanvas *offscreenMatrix = matrix->CreateFrameCanvas();
+  rgb_matrix::FrameCanvas *offscreenCanvas = matrix->CreateFrameCanvas();
 
   matrix->SetBrightness(brightness);
 
-  auto pager = std::make_unique<signboard::Pager>(settings);
-  auto muniClient = std::make_unique<signboard::TransitClient>(
-      "http://webservices.nextbus.com/service/publicXMLFeed", "sf-muni");
+  // PLUGIN SETUP
+  auto deadpool = std::make_shared<signboard::Deadpool>(workerThreads);
 
-  auto page1 = std::make_shared<signboard::Page>(font, yellow);
-  pager->registerPage(page1);
+  signboard::MuxPlugin mux;
+  auto weatherPlugin = std::make_shared<signboard::WeatherPlugin>(
+      37.8029, -122.4107, font, deadpool);
 
-  // TODO read these from a config file instead
-  // THIS IS JUST A KLUDGE FOR NOW
-  static std::vector<std::string> stopIds = {"10|5857", "12|5857"};
-  muniClient->addStopIds(stopIds);
+  auto newsPlugin = std::make_shared<signboard::NewsPlugin>("https://www.npr.org/feeds/1001/feed.json", font, deadpool);
 
-  signboard::PredictionMap predictions;
+  mux.addPlugin(weatherPlugin);
+  mux.addPlugin(newsPlugin);
 
-  // const size_t characterWidth = std::floor<size_t>(
-  //                                                  (matrixOptions.cols * matrixOptions.chain_length) / font.CharacterWidth(u'W'));
-
-  // signboard::TextLine line1;
-  // line1.cols[signboard::ColumnAlignment::LEFT] = "L";
-  // line1.cols[signboard::ColumnAlignment::CENTER] = "C";
-  // line1.cols[signboard::ColumnAlignment::RIGHT] = "R";
-  // line1.color = yellow;
 
   while (!interrupted) {
-    std::stringstream ss;
-    predictions = muniClient->getPredictions();
-    ss << predictions;
-    page1->setText(ss.str());
+    mux.update();
+    mux.getCanvas(offscreenCanvas);
 
-    pager->getCurrentFramebuffer(offscreenMatrix);
-
+    // Sleep for the refresh rate of the display
     std::this_thread::sleep_for(std::chrono::microseconds(usleepDuration));
-    offscreenMatrix = matrix->SwapOnVSync(offscreenMatrix);
+    offscreenCanvas = matrix->SwapOnVSync(offscreenCanvas);
   }
 
   matrix->Clear();
